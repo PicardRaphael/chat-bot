@@ -23,7 +23,8 @@ Un assistant IA personnel basé sur OpenAI GPT-4 et Gemini, avec une architectur
 ### 1. Cloner et naviguer
 
 ```bash
-cd raph/
+git clone git@github.com:PicardRaphael/chat-bot.git
+cd chat-bot/
 ```
 
 ### 2. Installer les dépendances
