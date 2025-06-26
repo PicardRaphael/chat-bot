@@ -51,7 +51,13 @@ class OpenAIClient:
                 )
 
                 response = self.client.chat.completions.create(
-                    model=model, messages=messages
+                    model=model,
+                    messages=messages,
+                    temperature=settings.CHAT_TEMPERATURE,
+                    top_p=settings.CHAT_TOP_P,
+                    frequency_penalty=settings.CHAT_FREQUENCY_PENALTY,
+                    presence_penalty=settings.CHAT_PRESENCE_PENALTY,
+                    max_tokens=settings.CHAT_MAX_TOKENS,
                 )
 
                 content = response.choices[0].message.content

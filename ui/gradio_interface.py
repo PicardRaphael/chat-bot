@@ -72,7 +72,6 @@ class GradioInterface:
 
         chat_interface = gr.ChatInterface(
             fn=self.chat_wrapper,
-            type="messages",
             title=self.title,
             description=self.description,
             theme=self.theme,

@@ -57,7 +57,12 @@ class GeminiClient:
                 )
 
                 response = self.client.beta.chat.completions.parse(
-                    model=self.model, messages=messages, response_format=Evaluation
+                    model=self.model,
+                    messages=messages,
+                    response_format=Evaluation,
+                    temperature=settings.EVAL_TEMPERATURE,
+                    top_p=settings.EVAL_TOP_P,
+                    max_tokens=settings.EVAL_MAX_TOKENS,
                 )
 
                 if response.choices[0].message.parsed:
@@ -115,7 +120,11 @@ class GeminiClient:
                 )
 
                 response = self.client.chat.completions.create(
-                    model=model, messages=messages
+                    model=model,
+                    messages=messages,
+                    temperature=settings.EVAL_TEMPERATURE,
+                    top_p=settings.EVAL_TOP_P,
+                    max_tokens=settings.EVAL_MAX_TOKENS,
                 )
 
                 content = response.choices[0].message.content

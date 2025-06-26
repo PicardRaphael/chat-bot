@@ -22,6 +22,20 @@ class Settings:
     CHAT_MODEL: str = "gpt-4o-mini"
     EVALUATION_MODEL: str = "gemini-2.0-flash"
 
+    # Chat AI Response Parameters
+    CHAT_TEMPERATURE: float = 0.4
+    CHAT_TOP_P: float = 0.95
+    CHAT_FREQUENCY_PENALTY: float = 0.3
+    CHAT_PRESENCE_PENALTY: float = 0.2
+    CHAT_MAX_TOKENS: int = 600
+
+    # Evaluation AI Response Parameters
+    EVAL_TEMPERATURE: float = 0.4
+    EVAL_TOP_P: float = 0.95
+    EVAL_FREQUENCY_PENALTY: float = 0.3
+    EVAL_PRESENCE_PENALTY: float = 0.2
+    EVAL_MAX_TOKENS: int = 600
+
     # File Paths
     PROFILE_DIR: str = "files"
     LINKEDIN_PDF: str = "linkedin.pdf"
