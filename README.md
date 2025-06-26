@@ -136,20 +136,20 @@ raph/
 
 ```mermaid
 graph TB
-    A[👤 Utilisateur] --> B[🎨 Gradio Interface]
-    B --> C[💬 Chat Service]
-    C --> D[📝 Message Formatter]
-    D --> E[🤖 OpenAI Client]
-    E --> F[📊 Evaluation Service]
-    F --> G[🔄 Retry Service]
-    G --> H[✨ Réponse finale]
+    A["👤 Utilisateur"] --> B["🎨 Gradio Interface"]
+    B --> C["💬 Chat Service"]
+    C --> D["📝 Message Formatter"]
+    D --> E["🤖 OpenAI Client"]
+    E --> F["📊 Evaluation Service"]
+    F --> G["🔄 Retry Service"]
+    G --> H["✨ Réponse finale"]
     H --> B
 
-    I[📁 Profile Loader] --> C
-    J[⚙️ Settings] --> C
-    K[📋 Prompts] --> C
-    L[🗃️ File Utils] --> I
-    M[📊 Logger] --> C
+    I["📁 Profile Loader"] --> C
+    J["⚙️ Settings"] --> C
+    K["📋 Prompts"] --> C
+    L["🗃️ File Utils"] --> I
+    M["📊 Logger"] --> C
 ```
 
 ## 🧩 Composants principaux
