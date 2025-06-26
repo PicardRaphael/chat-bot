@@ -186,6 +186,47 @@ Interface utilisateur avec deux modes :
 - **Simple** : Chat basique et épuré
 - **Avancé** : Onglets avec configuration et métriques
 
+## 🏛️ Architecture : LLM-as-a-Judge
+
+Ce système implémente le pattern **"LLM-as-a-Judge with Retry Logic"**, une architecture robuste utilisée dans les systèmes de production pour garantir la qualité des réponses.
+
+### Principe de fonctionnement
+
+```mermaid
+graph LR
+    A["👤 User Query"] --> B["🤖 Generator LLM<br/>(OpenAI GPT-4o-mini)"]
+    B --> C["💭 Response"]
+    C --> D["⚖️ Judge LLM<br/>(Gemini 2.0-flash)"]
+    D --> E{"✅ Acceptable?"}
+    E -->|"Yes"| F["📤 Final Response"]
+    E -->|"No"| G["🔄 Retry with Feedback"]
+    G --> B
+```
+
+### Avantages de cette approche
+
+- **🎯 Qualité garantie** : Double validation par des modèles différents
+- **🔄 Auto-correction** : Amélioration itérative avec feedback
+- **⚖️ Réduction des biais** : Validation croisée entre modèles
+- **📊 Métriques** : Traçabilité complète du processus
+
+### Composants clés
+
+| Rôle            | Modèle             | Responsabilité                         |
+| --------------- | ------------------ | -------------------------------------- |
+| **Generator**   | OpenAI GPT-4o-mini | Génère les réponses conversationnelles |
+| **Judge**       | Gemini 2.0-flash   | Évalue la qualité et pertinence        |
+| **Retry Logic** | Custom Service     | Orchestre les tentatives avec feedback |
+
+### Pattern reconnu dans l'industrie
+
+Cette architecture est également connue sous les noms :
+
+- **LLM-as-a-Judge** (terme le plus courant)
+- **Critic-Generator Architecture**
+- **Multi-Model Validation**
+- **Self-Correcting AI with External Judge**
+
 ## ⚙️ Configuration
 
 ### Variables d'environnement
