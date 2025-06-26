@@ -1,0 +1,24 @@
+2025-06-24 11:53:09 [INFO] raph_chatbot: Test info message
+2025-06-24 11:53:09 [WARNING] raph_chatbot: Test warning message
+2025-06-24 11:53:09 [INFO] raph_chatbot: 🚀 Starting: test operation
+2025-06-24 11:53:09 [INFO] raph_chatbot: ✅ Completed: test operation
+2025-06-24 11:53:09 [INFO] raph_chatbot: 🔍 Evaluating response for: 'Test message for evaluation'
+2025-06-24 11:53:09 [INFO] raph_chatbot: ✅ Evaluation PASSED - response accepted
+2025-06-24 11:53:09 [WARNING] raph_chatbot: ⚠️  Evaluation FAILED - retrying
+2025-06-24 11:53:09 [ERROR] raph_chatbot: 💥 Evaluation ERROR: Test error
+2025-06-24 14:29:43 [INFO] raph_chatbot: Test info message
+2025-06-24 14:29:43 [WARNING] raph_chatbot: Test warning message
+2025-06-24 14:29:43 [INFO] raph_chatbot: 🚀 Starting: test operation
+2025-06-24 14:29:43 [INFO] raph_chatbot: ✅ Completed: test operation
+2025-06-24 14:29:43 [INFO] raph_chatbot: 🔍 Evaluating response for: 'Test message for evaluation'
+2025-06-24 14:29:43 [INFO] raph_chatbot: ✅ Evaluation PASSED - response accepted
+2025-06-24 14:29:43 [WARNING] raph_chatbot: ⚠️  Evaluation FAILED - retrying
+2025-06-24 14:29:43 [ERROR] raph_chatbot: 💥 Evaluation ERROR: Test error
+2025-06-26 11:00:47 [INFO] raph_chatbot: 🚀 Starting Raphaël PICARD AI Assistant
+2025-06-26 11:00:47 [INFO] raph_chatbot: Interface mode: Simple
+2025-06-26 11:00:47 [INFO] raph_chatbot: Server: 127.0.0.1:7860
+2025-06-26 11:00:47 [INFO] raph_chatbot: Public sharing: Disabled
+2025-06-26 11:00:47 [INFO] raph_chatbot: Launching simple chat interface
+2025-06-26 11:00:47 [INFO] raph_chatbot: Creating chat interface
+2025-06-26 11:00:47 [INFO] raph_chatbot: Chat interface created successfully
+2025-06-26 11:01:55 [INFO] raph_chatbot: 👋 Application stopped by user
