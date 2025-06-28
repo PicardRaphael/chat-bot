@@ -13,10 +13,13 @@ class Settings:
     # API Keys
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
+    PUSHOVER_USER: str = os.getenv("PUSHOVER_USER", "")
+    PUSHOVER_TOKEN: str = os.getenv("PUSHOVER_TOKEN", "")
 
     # API URLs
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
     GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
+    PUSHOVER_BASE_URL: str = "https://api.pushover.net/1/messages.json"
 
     # Model Settings
     CHAT_MODEL: str = "gpt-4o-mini"
