@@ -11,8 +11,13 @@ class ToolsService:
 
     def __init__(self):
         """Initialize the tools service."""
-        self.pushover_client = get_pushover_client()
-        logger.debug("ToolsService initialized")
+        try:
+            self.pushover_client = get_pushover_client()
+            logger.debug("ToolsService initialized with Pushover client")
+        except Exception as e:
+            logger.warning(f"Failed to initialize Pushover client: {e}")
+            self.pushover_client = None
+            logger.debug("ToolsService initialized without Pushover client")
 
     def get_all_tools(self) -> List[Dict[str, Any]]:
         """
@@ -24,12 +29,15 @@ class ToolsService:
         tools = []
 
         # Add Pushover tools (delegate to client)
-        try:
-            pushover_tools = self.pushover_client.pushover_tools()
-            tools.extend(pushover_tools)
-            logger.debug(f"Added {len(pushover_tools)} Pushover tools")
-        except Exception as e:
-            logger.warning(f"Failed to load Pushover tools: {e}")
+        if self.pushover_client:
+            try:
+                pushover_tools = self.pushover_client.pushover_tools()
+                tools.extend(pushover_tools)
+                logger.debug(f"Added {len(pushover_tools)} Pushover tools")
+            except Exception as e:
+                logger.warning(f"Failed to load Pushover tools: {e}")
+        else:
+            logger.debug("Pushover client not available, skipping Pushover tools")
 
         # Future tools can be added here:
         # tools.extend(self.slack_client.slack_tools())
@@ -54,7 +62,13 @@ class ToolsService:
 
             # Route to appropriate client based on tool name
             if tool_name in ["record_user_details", "record_unknown_question"]:
-                return self.pushover_client.execute_tool(tool_name, **kwargs)
+                if self.pushover_client:
+                    return self.pushover_client.execute_tool(tool_name, **kwargs)
+                else:
+                    logger.warning(
+                        f"Pushover client not available for tool: {tool_name}"
+                    )
+                    return {"error": "Pushover client not configured"}
 
             # Future tools routing:
             # elif tool_name.startswith("slack_"):

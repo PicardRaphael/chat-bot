@@ -9,6 +9,7 @@ from core.profile_loader import get_info
 from api.openai_client import create_chat_completion
 from services.evaluation_service import get_evaluation_service
 from services.retry_service import get_retry_service
+from services.tools_service import get_all_tools
 
 
 class ChatService:
@@ -51,9 +52,10 @@ class ChatService:
         try:
             system_prompt = self.get_system_prompt()
             messages = build_chat_messages(system_prompt, message, history)
+            tools = get_all_tools()
 
             logger.debug(f"Generating response for message: '{message[:50]}...'")
-            response = create_chat_completion(messages)
+            response = create_chat_completion(messages, tools=tools)
 
             if response:
                 logger.debug(f"Response generated: {len(response)} characters")

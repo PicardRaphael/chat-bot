@@ -6,6 +6,7 @@ from typing import List, Optional
 import time
 from config.settings import settings
 from utils.logger import logger
+from services.tools_service import handle_tool_calls
 
 
 class OpenAIClient:
@@ -29,14 +30,16 @@ class OpenAIClient:
         messages: List[ChatCompletionMessageParam],
         model: Optional[str] = None,
         max_retries: Optional[int] = None,
+        tools: Optional[List] = None,
     ) -> Optional[str]:
         """
-        Create a chat completion with retry logic.
+        Create a chat completion with retry logic and optional tools support.
 
         Args:
             messages: List of messages for the completion
             model: Model to use (defaults to configured model)
             max_retries: Maximum number of retries (defaults to configured max_retries)
+            tools: Optional list of tools for function calling
 
         Returns:
             The completion content or None if all retries failed
@@ -50,15 +53,65 @@ class OpenAIClient:
                     f"Attempting OpenAI completion (attempt {attempt + 1}/{max_retries})"
                 )
 
-                response = self.client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    temperature=settings.CHAT_TEMPERATURE,
-                    top_p=settings.CHAT_TOP_P,
-                    frequency_penalty=settings.CHAT_FREQUENCY_PENALTY,
-                    presence_penalty=settings.CHAT_PRESENCE_PENALTY,
-                    max_tokens=settings.CHAT_MAX_TOKENS,
-                )
+                # Work with a copy of messages to avoid modifying the original
+                working_messages = messages.copy()
+                done = False
+
+                while not done:
+                    # Prepare API call parameters
+                    call_params = {
+                        "model": model,
+                        "messages": working_messages,
+                        "temperature": settings.CHAT_TEMPERATURE,
+                        "top_p": settings.CHAT_TOP_P,
+                        "frequency_penalty": settings.CHAT_FREQUENCY_PENALTY,
+                        "presence_penalty": settings.CHAT_PRESENCE_PENALTY,
+                        "max_tokens": settings.CHAT_MAX_TOKENS,
+                    }
+
+                    # Add tools if provided
+                    if tools:
+                        call_params["tools"] = tools
+
+                    response = self.client.chat.completions.create(**call_params)
+                    finish_reason = response.choices[0].finish_reason
+
+                    # If the LLM wants to call a tool, we do that!
+                    if finish_reason == "tool_calls" and tools:
+
+                        message_with_tools = response.choices[0].message
+                        tool_calls = message_with_tools.tool_calls
+
+                        if tool_calls:
+                            # Handle tool calls
+                            tool_results = handle_tool_calls(tool_calls)
+
+                            # Add tool call message to conversation
+                            working_messages.append(
+                                {
+                                    "role": "assistant",
+                                    "content": message_with_tools.content or "",
+                                    "tool_calls": [
+                                        {
+                                            "id": tc.id,
+                                            "type": tc.type,
+                                            "function": {
+                                                "name": tc.function.name,
+                                                "arguments": tc.function.arguments,
+                                            },
+                                        }
+                                        for tc in tool_calls
+                                    ],
+                                }
+                            )
+
+                            # Add tool results to conversation
+                            for result in tool_results:
+                                working_messages.append(result)  # type: ignore
+                        else:
+                            done = True
+                    else:
+                        done = True
 
                 content = response.choices[0].message.content
                 logger.debug(f"OpenAI completion successful on attempt {attempt + 1}")
@@ -131,17 +184,19 @@ def create_chat_completion(
     messages: List[ChatCompletionMessageParam],
     model: Optional[str] = None,
     max_retries: Optional[int] = None,
+    tools: Optional[List] = None,
 ) -> Optional[str]:
     """
-    Convenience function for creating chat completions.
+    Convenience function for creating chat completions with optional tools support.
 
     Args:
         messages: List of messages for the completion
         model: Model to use (defaults to configured model)
         max_retries: Maximum number of retries (defaults to configured max_retries)
+        tools: Optional list of tools for function calling
 
     Returns:
         The completion content or None if failed
     """
     client = get_openai_client()
-    return client.create_chat_completion(messages, model, max_retries)
+    return client.create_chat_completion(messages, model, max_retries, tools)
