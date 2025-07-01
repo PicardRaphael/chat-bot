@@ -8,6 +8,8 @@ Un assistant IA personnel basé sur OpenAI GPT-4 et Gemini, avec une architectur
 - 🔄 **Système de retry intelligent** avec stratégies multiples
 - 📊 **Évaluation automatique** des réponses avec Gemini
 - 🎯 **Profil personnalisé** basé sur CV et informations LinkedIn
+- 🛠️ **Function Calling & Tools** - Système de tools automatiques
+- 📬 **Notifications Pushover** pour enregistrer les questions inconnues
 - ⚙️ **Configuration flexible** via variables d'environnement
 - 📈 **Logging et métriques** pour monitoring
 - 🏗️ **Architecture modulaire** pour faciliter la maintenance
@@ -41,6 +43,10 @@ Créer un fichier `.env` :
 # API Keys (obligatoires)
 OPENAI_API_KEY=sk-...
 GOOGLE_API_KEY=...
+
+# Pushover (pour tools/notifications)
+PUSHOVER_USER=your_pushover_user_key
+PUSHOVER_TOKEN=your_pushover_app_token
 
 # Configuration optionnelle
 CHAT_MODEL=gpt-4o-mini
@@ -104,7 +110,8 @@ raph/
 ├── 📁 config/                 # Configuration
 │   ├── __init__.py
 │   ├── settings.py            # Variables d'environnement centralisées
-│   └── prompts.py             # Templates de prompts
+│   ├── prompts.py             # Templates de prompts
+│   └── pushover.py            # Templates des tools Pushover
 ├── 📁 core/                   # Logique métier centrale
 │   ├── __init__.py
 │   ├── models.py              # Classes Pydantic (données structurées)
@@ -112,13 +119,15 @@ raph/
 │   └── message_formatter.py   # Formatage des messages OpenAI
 ├── 📁 services/               # Services métier
 │   ├── __init__.py
-│   ├── services/chat_service.py        # Service principal de chat
+│   ├── chat_service.py        # Service principal de chat
 │   ├── evaluation_service.py  # Évaluation des réponses
-│   └── retry_service.py       # Stratégies de retry intelligentes
+│   ├── retry_service.py       # Stratégies de retry intelligentes
+│   └── tools_service.py       # Orchestrateur des tools/function calling
 ├── 📁 api/                    # Clients API
 │   ├── __init__.py
 │   ├── openai_client.py       # Client OpenAI configuré
-│   └── gemini_client.py       # Client Gemini pour évaluation
+│   ├── gemini_client.py       # Client Gemini pour évaluation
+│   └── pushover_client.py     # Client Pushover pour notifications
 ├── 📁 ui/                     # Interface utilisateur
 │   ├── __init__.py
 │   └── gradio_interface.py    # Interface Gradio complète
@@ -140,16 +149,19 @@ graph TB
     B --> C["💬 Chat Service"]
     C --> D["📝 Message Formatter"]
     D --> E["🤖 OpenAI Client"]
-    E --> F["📊 Evaluation Service"]
-    F --> G["🔄 Retry Service"]
-    G --> H["✨ Réponse finale"]
-    H --> B
+    E --> F["🛠️ Tools Service"]
+    F --> G["📬 Pushover Client"]
+    E --> H["📊 Evaluation Service"]
+    H --> I["🔄 Retry Service"]
+    I --> J["✨ Réponse finale"]
+    J --> B
 
-    I["📁 Profile Loader"] --> C
-    J["⚙️ Settings"] --> C
-    K["📋 Prompts"] --> C
-    L["🗃️ File Utils"] --> I
-    M["📊 Logger"] --> C
+    K["📁 Profile Loader"] --> C
+    L["⚙️ Settings"] --> C
+    M["📋 Prompts"] --> C
+    N["🗃️ File Utils"] --> K
+    O["📊 Logger"] --> C
+    P["🔧 Tool Templates"] --> F
 ```
 
 ## 🧩 Composants principaux
@@ -185,6 +197,207 @@ Interface utilisateur avec deux modes :
 
 - **Simple** : Chat basique et épuré
 - **Avancé** : Onglets avec configuration et métriques
+
+## 🛠️ Système de Tools (Function Calling)
+
+L'assistant intègre un système de **function calling** permettant à l'IA d'exécuter automatiquement des actions externes en fonction du contexte de la conversation.
+
+### 🎯 Fonctionnement
+
+```mermaid
+graph TB
+    A["👤 User Query"] --> B["🤖 OpenAI GPT-4o-mini"]
+    B --> C{"🔍 Tool Call Required?"}
+    C -->|"Yes"| D["🛠️ Tool Execution"]
+    C -->|"No"| E["💬 Direct Response"]
+    D --> F["📬 External Action<br/>(Pushover, etc.)"]
+    F --> G["🔄 Continue Conversation"]
+    G --> E
+    E --> H["📤 Final Response"]
+```
+
+### 📋 Tools disponibles
+
+| Tool                      | Déclencheur                                | Action                                    |
+| ------------------------- | ------------------------------------------ | ----------------------------------------- |
+| `record_unknown_question` | Question sans réponse connue               | 📬 Notification Pushover de la question   |
+| `record_user_details`     | Utilisateur fournit email/infos de contact | 📬 Notification Pushover avec les détails |
+
+### ⚙️ Configuration des Tools
+
+#### Variables d'environnement requises
+
+Ajouter dans votre fichier `.env` :
+
+```bash
+# Pushover (pour notifications)
+PUSHOVER_USER=your_pushover_user_key
+PUSHOVER_TOKEN=your_pushover_app_token
+```
+
+#### Obtenir les clés Pushover
+
+1. **Créer un compte** sur [pushover.net](https://pushover.net)
+2. **User Key** : Disponible sur le dashboard principal
+3. **App Token** : Créer une nouvelle application dans "Your Applications"
+
+### 📬 Tools Pushover
+
+#### `record_unknown_question`
+
+**Déclenchement automatique** :
+
+- L'IA ne connaît pas la réponse à une question
+- Information non présente dans le profil/CV
+- Question sortant du domaine de compétence
+
+**Exemple** :
+
+```
+User: "Quel est ton film préféré ?"
+IA: "Je ne trouve pas cette information dans mon profil. Laisse-moi enregistrer cette question..."
+🔧 Tool Call → record_unknown_question("Quel est ton film préféré ?")
+📬 Pushover → "Recording question asked that I couldn't answer: Quel est ton film préféré ?"
+```
+
+#### `record_user_details`
+
+**Déclenchement automatique** :
+
+- Utilisateur partage son email
+- Demande de contact ou collaboration
+- Intérêt exprimé pour un projet
+
+**Exemple** :
+
+```
+User: "Je suis intéressé par ton profil, mon email est john@example.com"
+🔧 Tool Call → record_user_details(email="john@example.com", name="John", notes="Intérêt pour le profil")
+📬 Pushover → "Recording interest from John with email john@example.com and notes Intérêt pour le profil"
+```
+
+### 🏗️ Architecture des Tools
+
+```
+services/
+├── tools_service.py         # Orchestrateur principal des tools
+api/
+├── pushover_client.py       # Client Pushover
+config/
+├── pushover.py             # Templates des tools Pushover
+```
+
+#### Structure d'un Tool
+
+Format OpenAI Function Calling :
+
+```json
+{
+  "type": "function",
+  "function": {
+    "name": "record_unknown_question",
+    "description": "Always use this tool to record any question that couldn't be answered",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "question": {
+          "type": "string",
+          "description": "The question that couldn't be answered"
+        }
+      },
+      "required": ["question"]
+    }
+  }
+}
+```
+
+### 🔧 Ajouter de nouveaux Tools
+
+#### 1. Créer le client API
+
+```python
+# api/mon_service_client.py
+class MonServiceClient:
+    def execute_tool(self, tool_name: str, **kwargs) -> dict:
+        if tool_name == "mon_action":
+            return self.mon_action(**kwargs)
+
+    def mon_action(self, param1: str) -> dict:
+        # Logique d'exécution
+        return {"success": True}
+
+    def mon_service_tools(self) -> List[Dict[str, Any]]:
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": "mon_action",
+                    "description": "Description de l'action",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "param1": {
+                                "type": "string",
+                                "description": "Description du paramètre"
+                            }
+                        },
+                        "required": ["param1"]
+                    }
+                }
+            }
+        ]
+```
+
+#### 2. Intégrer dans ToolsService
+
+```python
+# services/tools_service.py
+def __init__(self):
+    self.pushover_client = get_pushover_client()
+    self.mon_service_client = get_mon_service_client()  # Nouveau
+
+def get_all_tools(self):
+    tools = []
+    # Pushover tools
+    tools.extend(self.pushover_client.pushover_tools())
+    # Nouveaux tools
+    tools.extend(self.mon_service_client.mon_service_tools())
+    return tools
+```
+
+### 🐛 Dépannage des Tools
+
+#### Erreurs courantes
+
+**"Missing required parameter: 'tools[0].type'"**
+
+- Vérifier le format JSON des tools
+- S'assurer que `"type": "function"` est présent
+
+**"Tool execution failed"**
+
+- Vérifier les variables d'environnement (PUSHOVER_USER, PUSHOVER_TOKEN)
+- Contrôler les logs pour identifier l'erreur spécifique
+
+**Tools non appelés**
+
+- Vérifier que les tools sont bien chargés avec `get_all_tools()`
+- S'assurer que le prompt système encourage l'utilisation des tools
+
+#### Tests de validation
+
+```python
+# Test des tools
+from services.tools_service import get_all_tools, execute_tool
+
+# Vérifier le chargement
+tools = get_all_tools()
+print(f"Tools disponibles: {len(tools)}")
+
+# Test d'exécution
+result = execute_tool("record_unknown_question", question="Test question")
+print(f"Résultat: {result}")
+```
 
 ## 🏛️ Architecture : LLM-as-a-Judge
 
@@ -235,6 +448,8 @@ Cette architecture est également connue sous les noms :
 | ------------------- | -------------------------------- | ------------------ |
 | `OPENAI_API_KEY`    | Clé API OpenAI                   | _(obligatoire)_    |
 | `GOOGLE_API_KEY`    | Clé API Google                   | _(obligatoire)_    |
+| `PUSHOVER_USER`     | User Key Pushover pour tools     | _(optionnel)_      |
+| `PUSHOVER_TOKEN`    | App Token Pushover pour tools    | _(optionnel)_      |
 | `CHAT_MODEL`        | Modèle OpenAI pour le chat       | `gpt-4o-mini`      |
 | `EVALUATION_MODEL`  | Modèle Gemini pour l'évaluation  | `gemini-2.0-flash` |
 | `PROFILE_DIR`       | Dossier des fichiers de profil   | `raph/files`       |
@@ -352,6 +567,12 @@ Vous êtes un assistant personnalisé pour {name}.
 - Vérifier que le port n'est pas déjà utilisé
 - Essayer avec `--port 8080`
 
+**Erreurs liées aux Tools**
+
+- **"PUSHOVER_USER environment variable is required"** : Ajouter les variables Pushover dans `.env`
+- **"Missing required parameter: 'tools[0].type'"** : Problème de format des tools, vérifier `config/pushover.py`
+- **Tools non appelés** : Vérifier que le prompt système encourage l'utilisation des tools
+
 ### Logs de débogage
 
 Activer le mode debug :
@@ -366,6 +587,7 @@ python main.py
 ```python
 from api.openai_client import get_openai_client
 from api.gemini_client import get_gemini_client
+from services.tools_service import get_all_tools, execute_tool
 
 # Test OpenAI
 openai_client = get_openai_client()
@@ -374,6 +596,17 @@ print(openai_client.test_connection())
 # Test Gemini
 gemini_client = get_gemini_client()
 print(gemini_client.test_connection())
+
+# Test Tools
+tools = get_all_tools()
+print(f"Tools disponibles: {len(tools)}")
+
+# Test Pushover (si configuré)
+try:
+    result = execute_tool("record_unknown_question", question="Test de connectivité")
+    print(f"Test Pushover: {result}")
+except Exception as e:
+    print(f"Pushover non configuré: {e}")
 ```
 
 ## 🚀 Développement
